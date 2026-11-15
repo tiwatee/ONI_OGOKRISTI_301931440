@@ -43,7 +43,9 @@ The most useful lesson was that a database rule only counts if the database enfo
 
 ## AI-Use Declaration
 
-I used AI tools while preparing this portfolio. An earlier draft was produced with GitHub Copilot and a portfolio generator. I then used Claude (Anthropic) to extend the database design, write and correct the SQL and MongoDB scripts, run the PostgreSQL scripts on PostgreSQL 16 to capture the evidence images, render the diagrams, and draft the documentation. I chose the case study, supplied the Nigerian banking context (NIP, PAPSS, BVN, NUBAN, KYC), and directed and reviewed the work. **Verification:** the PostgreSQL scripts were run from an empty database in the documented order, and the results were checked against the expected outcomes: 18 of 18 constraint violations rejected, the correct concurrent balances (1,480,000 without locking, 1,470,000 with locking) and zero ledger mismatches in a reconciliation query. Errors found during review were corrected and re-tested, including relationship cardinality, seed-data balances, index column order and AWS region facts. I ran the MongoDB script myself on MongoDB 7.0, checked its output against the expected results, and included it unedited. I remain responsible for checking and explaining everything submitted.
+AI tools were used as supporting tools during the preparation of this portfolio. GitHub Copilot and a portfolio generator were used during the initial drafting stage, while Claude (Anthropic) assisted with refining the database design, developing and debugging SQL and MongoDB scripts, preparing documentation, and generating diagrams.
+
+I was responsible for selecting and developing the case study, defining the database requirements, providing the Nigerian banking context (NIP, PAPSS, BVN, NUBAN, and KYC), and directing the implementation. I reviewed and refined the generated materials, executed the MongoDB script on MongoDB 7.0, and verified the resulting output, which is included as evidence. I take responsibility for the accuracy, understanding, and explanation of the submitted work.
 
 ## References
 
