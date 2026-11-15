@@ -3,7 +3,7 @@
 **MIT 8103 Advanced Database Systems · Practical Database Portfolio**
 Ogokristi Oni · Student ID 301931440 · Miva Open University
 
-📄 **[Final summary (PDF)](ONI_OGOKRISTI_301931440_FinalSummary.pdf)** · [Markdown version](ONI_OGOKRISTI_301931440_FinalSummary.md)
+📄 **[Final summary (PDF)](ONI_OGOKRISTI_301931440_FinalSummary.pdf)** · [Word version](ONI_OGOKRISTI_301931440_FinalSummary.docx) · [Markdown version](ONI_OGOKRISTI_301931440_FinalSummary.md)
 
 ## Case Study
 
