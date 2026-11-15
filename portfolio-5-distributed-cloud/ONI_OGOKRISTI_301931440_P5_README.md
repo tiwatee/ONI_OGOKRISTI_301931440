@@ -10,7 +10,7 @@
 
 ## Overview
 
-This portfolio proposes how EgoTrust's databases would scale to a distributed, cloud-hosted environment on Amazon Web Services (AWS). It covers replication, sharding, the CAP theorem, data residency and a cloud deployment architecture. This is a **design exercise**: no cloud resources were provisioned and no failover test was run. The replication-monitoring and partitioning SQL **was** run on a single PostgreSQL 16 instance (evidence below).
+This portfolio proposes how EgoTrust's databases would scale to a distributed, cloud-hosted environment on Amazon Web Services (AWS). It covers replication, sharding, the CAP theorem, data residency and a cloud deployment architecture. This is a **design exercise**: no cloud resources were provisioned and no failover test was run. The replication-monitoring and partitioning SQL **was** run on a single PostgreSQL 14.19 instance on my Mac (evidence below; raw output in [ONI_OGOKRISTI_301931440_P5_Output.txt](ONI_OGOKRISTI_301931440_P5_Output.txt)).
 
 | File | Contents |
 |---|---|

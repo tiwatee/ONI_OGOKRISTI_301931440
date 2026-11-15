@@ -1,0 +1,57 @@
+ is_replica | instance_role 
+------------+---------------
+ f          | PRIMARY
+(1 row)
+
+ replication_lag | last_wal_received | last_wal_replayed |           sync_status           
+-----------------+-------------------+-------------------+---------------------------------
+                 |                   |                   | N/A: this server is the primary
+(1 row)
+
+ slot_name | slot_type | active | restart_lsn | retained_wal 
+-----------+-----------+--------+-------------+--------------
+(0 rows)
+
+ client_addr | state | sent_lsn | write_lsn | flush_lsn | replay_lsn | replay_lag_bytes | sync_state 
+-------------+-------+----------+-----------+-----------+------------+------------------+------------
+(0 rows)
+
+BEGIN
+UPDATE 1
+INSERT 0 1
+COMMIT
+ transaction_date | transaction_type |       narration        |  amount  | balance_after | channel |              reference               
+------------------+------------------+------------------------+----------+---------------+---------+--------------------------------------
+ 2026-11-15       | debit            | Airtime purchase       | 10000.00 |     213950.00 | ussd    | TXN-099bdbd63381443c91a51e572d3034e0
+ 2026-11-15       | debit            | ATM withdrawal         |  1000.00 |     223950.00 | atm     | TXN-f13857a62b5c4033843e5bc3d44c4d42
+ 2026-11-15       | debit            | Transfer to Ngozi Eze  | 25000.00 |     224950.00 | mobile  | TXN-9f4fe04c58a0475da48fda3f2a2b5696
+ 2026-11-01       | fee              | SMS notification fee   |    50.00 |     249950.00 | api     | TXN-20261101-006
+ 2026-11-01       | credit           | Salary credit Nov 2026 | 50000.00 |     250000.00 | api     | TXN-20261101-001
+(5 rows)
+
+BEGIN
+  balance  
+-----------
+ 213950.00
+(1 row)
+
+COMMIT
+CREATE TABLE
+CREATE TABLE
+CREATE TABLE
+CREATE TABLE
+CREATE TABLE
+INSERT 0 1
+                                                                      QUERY PLAN                                                                      
+------------------------------------------------------------------------------------------------------------------------------------------------------
+ Seq Scan on txn_2026_11 transactions_partitioned  (cost=0.00..11.20 rows=1 width=928) (actual time=0.003..0.003 rows=1 loops=1)
+   Filter: ((created_at >= '2026-11-01 00:00:00'::timestamp without time zone) AND (created_at < '2026-12-01 00:00:00'::timestamp without time zone))
+ Planning Time: 0.066 ms
+ Execution Time: 0.006 ms
+(4 rows)
+
+ database | active_connections | transactions_committed | transactions_rolled_back | disk_blocks_read | cache_hits | cache_hit_ratio 
+----------+--------------------+------------------------+--------------------------+------------------+------------+-----------------
+ egotrust |                  1 |                    178 |                       21 |            10747 |     701550 |           98.49
+(1 row)
+
