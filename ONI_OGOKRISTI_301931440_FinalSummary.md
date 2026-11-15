@@ -15,7 +15,7 @@ I designed 8 PostgreSQL tables: branches, staff, customers, KYC documents, accou
 
 ## Portfolio 2: Query Processing and Optimisation
 
-I wrote 7 business queries: customer summaries, account statements, a failed-transfer report, channel volumes, a KYC compliance report, a window-function ranking and an audit trail. I examined each with `EXPLAIN ANALYZE`. On the small sample tables PostgreSQL correctly chose sequential scans, so I built a 500,000-row benchmark table to measure indexing. A composite index with the equality columns first and the date last cut the account-statement query **from 33.1 ms to 0.22 ms**. A covering index with `INCLUDE` produced an index-only scan with no heap fetches. A partial index on failed transactions was **456 kB against 19 MB** for the equivalent full index.
+I wrote 7 business queries: customer summaries, account statements, a failed-transfer report, channel volumes, a KYC compliance report, a window-function ranking and an audit trail. I examined each with `EXPLAIN ANALYZE`. On the small sample tables PostgreSQL correctly chose sequential scans, so I built a 500,000-row benchmark table to measure indexing. A composite index with the equality columns first and the date last cut the account-statement query **from 22.9 ms to 0.075 ms**. A covering index with `INCLUDE` produced an index-only scan with no heap fetches. A partial index on failed transactions was **456 kB against 19 MB** for the equivalent full index.
 
 ## Portfolio 3: Transactions and Concurrency
 
@@ -39,13 +39,13 @@ I proposed (but did not deploy) a distributed design. Replication uses a synchro
 
 ## Individual Reflection
 
-The most useful lesson was that a database rule only counts if the database enforces it. My first transfer design looked tidy but could not represent a payment to another bank, and the constraint tests exposed that quickly. Normalisation also turned out to be a trade-off, not a goal: the stored balances break strict 3NF, but they make every ledger row self-contained evidence. The concurrency exercise made the lost-update problem concrete. Both sessions read the same balance, one customer's withdrawal silently disappeared, and the fix was a single `FOR UPDATE`. Checking execution plans rather than final answers showed that identical results can need very different amounts of work. One measurement surprised me: I expected the wrong-order index to be clearly slower, but with about 100 rows per account it made no difference. Indexing rules matter at scale, so they have to be tested with realistic data volumes.
+The most useful lesson was that a database rule only counts if the database enforces it. My first transfer design looked tidy but could not represent a payment to another bank, and the constraint tests exposed that quickly. Normalisation also turned out to be a trade-off, not a goal: the stored balances break strict 3NF, but they make every ledger row self-contained evidence. The concurrency exercise made the lost-update problem concrete. Both sessions read the same balance, one customer's withdrawal silently disappeared, and the fix was a single `FOR UPDATE`. Checking execution plans rather than final answers showed that identical results can need very different amounts of work. One measurement surprised me: I expected the wrong-order index to be clearly slower, but with about 100 rows per account it made almost no difference (0.092 ms against 0.075 ms). Indexing rules matter at scale, so they have to be tested with realistic data volumes.
 
 ## AI-Use Declaration
 
 AI tools were used as supporting tools during the preparation of this portfolio. GitHub Copilot was used during the initial drafting stage, while Claude (Anthropic) assisted with refining the database design, developing and debugging SQL and MongoDB scripts, preparing documentation, and generating diagrams.
 
-I was responsible for selecting and developing the case study, defining the database requirements, providing the Nigerian banking context (NIP, PAPSS, BVN, NUBAN, and KYC), and directing the implementation. I reviewed and refined the generated materials, executed the MongoDB script on MongoDB 7.0, and verified the resulting output, which is included as evidence. I take responsibility for the accuracy, understanding, and explanation of the submitted work.
+I was responsible for selecting and developing the case study, defining the database requirements, providing the Nigerian banking context (NIP, PAPSS, BVN, NUBAN, and KYC), and directing the implementation. I reviewed and refined the generated materials, executed the PostgreSQL scripts on PostgreSQL 14.19 and the MongoDB script on MongoDB 7.0, and verified the resulting outputs, which are included as evidence. I take responsibility for the accuracy, understanding, and explanation of the submitted work.
 
 ## References
 
