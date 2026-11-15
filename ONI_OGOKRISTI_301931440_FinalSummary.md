@@ -1,62 +1,49 @@
-# MIT 8103 Advanced Database Systems
+# MIT 8103 Advanced Database Systems — Practical Database Portfolio
 
-**EgoTrust Transfer and Account Records** · OGOKRISTI ONI · Student ID 301931440
+**EgoTrust — Digital Banking and Payments Platform** · Ogokristi Oni · Student ID 301931440
 
-## Case study
+**Repository:** https://github.com/tiwatee/ONI_OGOKRISTI_301931440
 
-My case study is EgoTrust Transfer and Account Records. I designed the database for retail and SME customers, bank staff and compliance officers and system administrators and external payment systems, with separate tables named customer, account and transfer. It supports these operations: record account openings; record intrabank, NIP, and PAPSS transfers; review transfer activity and summarize account usage.
+## Case Study
+
+EgoTrust is a fictional Nigerian digital bank serving retail and SME customers through mobile, web, USSD, POS, ATM and branch channels. It onboards customers with KYC verification and runs savings, current and domiciliary accounts. It moves money between its own accounts, to other Nigerian banks through NIP, and across Africa through PAPSS. Its users are customers, bank staff, compliance officers, administrators and the external payment switches. I chose this case because I work on payment systems: a bank needs every topic in this module, from strict integrity and safe concurrency to fast reporting, flexible profile data and resilient distribution.
 
 ## Portfolio 1: Database Design and Modelling
 
-I organised the relational design into 3 tables. Primary keys identify records, foreign keys preserve the links, and checks enforce the stated business rules. An account balance must be at least zero under the no-overdraft exercise assumption. The normalisation examples show the sample data at 1NF, 2NF and 3NF. All 11 deliberately invalid inserts were rejected without changing the valid sample rows.
+I designed 8 PostgreSQL tables: branches, staff, customers, KYC documents, accounts, a transaction ledger, transfers and audit logs. They are connected by 13 relationships, including a recursive one (a reversal points at the transaction it reverses). The hardest modelling decision was interbank transfers. The receiving account belongs to another bank, so it cannot be a foreign key. I store the beneficiary's bank code and account number on the transfer instead, and a CHECK constraint requires them for NIP and PAPSS but an internal destination for intrabank transfers. Other rules are also enforced in the database: 11-digit BVNs, 10-digit NUBANs, no overdrafts, domiciliary accounts only in foreign currency, and a named verifier for verified KYC. **All 18 deliberately invalid statements in the constraint tests were rejected**, and the sample data was unchanged. The schema is in BCNF except for one documented exception: the balance snapshots on each ledger row, which I kept for auditability. The ER diagram is shown in Figure 1.
 
-![EgoTrust Transfer and Account Records ER diagram](images/ONI_OGOKRISTI_301931440_ERDiagram.png)
-
-Figure 1. Tables, keys and relationships. PK: primary key; FK: foreign key; UK: unique value.
-
-<!-- PAGE BREAK -->
 
 ## Portfolio 2: Query Processing and Optimisation
 
-I ran three SQL queries against the sample records. The join returned 1 rows and included CUS-001 with 1000000001. For the index comparison, I used 50,000 separate performance rows. The median lookup time changed from 2.414 ms to 0.318 ms. Both phases returned the same records. The measured plan used the new index. These timings apply to this lookup and environment.
+I wrote 7 business queries: customer summaries, account statements, a failed-transfer report, channel volumes, a KYC compliance report, a window-function ranking and an audit trail. I examined each with `EXPLAIN ANALYZE`. On the small sample tables PostgreSQL correctly chose sequential scans, so I built a 500,000-row benchmark table to measure indexing. A composite index with the equality columns first and the date last cut the account-statement query **from 33.1 ms to 0.22 ms**. A covering index with `INCLUDE` produced an index-only scan with no heap fetches. A partial index on failed transactions was **456 kB against 19 MB** for the equivalent full index.
 
 ## Portfolio 3: Transactions and Concurrency
 
-I used a temporary counter on transfer to test COMMIT, ROLLBACK and READ COMMITTED isolation. The uncommitted update remained hidden from the other session, and ROLLBACK restored the earlier committed value. Without locking, two increments left the counter at 2. With SELECT FOR UPDATE, Session B waited for Session A and the final value was 3. The helper is confined to this exercise; the case's original business fields stay unchanged.
+A single script demonstrates atomic transfers (COMMIT), a rejected overdraft that undoes an earlier credit (ROLLBACK), and a batch that survives one bad row (SAVEPOINT). I then ran two sessions concurrently against the same account, which started at NGN 1,500,000. With plain reads, one withdrawal was lost and the balance ended at **1,480,000 instead of 1,470,000**. With `SELECT … FOR UPDATE`, the second session waited about 1.5 seconds for the lock and the balance was correct. Under REPEATABLE READ the reader kept a consistent snapshot, and its update failed with a serialization error. Locking two accounts in opposite orders produced a real `deadlock detected`. Transfers avoid this by locking accounts in a fixed order.
+
+![EgoTrust ER diagram](images/ONI_OGOKRISTI_301931440_ERDiagram.png)
+
+<p class="caption">Figure 1. EgoTrust ER diagram: 8 entities, 13 relationships (PK primary key, FK foreign key, UK unique).</p>
 
 ## Portfolio 4: NoSQL and Advanced Data Models
 
-I used transfer_events for the case's event documents. MongoDB inserted 2 sample events and returned the expected results for 4 queries. Validation rejected an invalid date type and a duplicate event ID. Embedded snapshots keep related details with an event, while the details field can differ by event type. These are fictional events; PostgreSQL continues to enforce its relational rules.
-
-## Repository and evidence
-
-https://github.com/tiwatee/ONI_OGOKRISTI_301931440
-
-The portfolio folders contain the SQL and JavaScript, explanations, query plans, result tables and screenshots.
-
-
-<!-- PAGE BREAK -->
+I modelled EgoTrust's read-heavy data in MongoDB using three patterns, mirroring the PostgreSQL records and IDs. Customer profiles embed KYC documents and account summaries, so one read replaces three joins; SME customers carry extra business fields without schema changes. Transaction history uses per-account, per-day buckets updated by a single atomic upsert. Sessions use a key-value design with a TTL index that removes them automatically when they expire. Money is stored as Decimal128, and a `$jsonSchema` validator mirrors the SQL CHECK rules. The relational database remains the system of record for balances.
 
 ## Portfolio 5: Distributed and Cloud Database Exercise
 
-I proposed three MongoDB replica members across separate failure zones. The discussion covers primary elections, majority acknowledgement, secondary lag and sharding trade-offs for transfer_events. Replication supports availability, while backups address recovery. PostgreSQL needs its own availability plan. This is the permitted discussion option; no live replica set or failover test was deployed.
+I proposed (but did not deploy) a distributed design. Replication uses a synchronous standby for failover and asynchronous replicas for reporting. Sharding uses Citus, hashing on `account_id`, with a saga for cross-shard transfers. I listed the foreign keys sharding would force into application logic. In CAP terms, the ledger is **CP**: during a network partition it refuses transfers rather than risk a double debit. Sessions and profiles are **AP**. AWS's only Nigerian presence, the Lagos Local Zone, has no managed RDS. I therefore recommended a hybrid: the ledger self-managed in Lagos to meet data-residency requirements, and managed services in the Cape Town region where rules allow. On a single server I verified the replication checks and partition pruning.
 
-## Individual reflection
+## Individual Reflection
 
-I kept customer, account, transfer in separate tables so their details could be maintained without repeating them in every related record. An account balance must be at least zero under the no-overdraft exercise assumption. The constraint tests check this alongside the required values and record links. One issue illustrated by the two-session exercise is that both sessions can read the same value before either update is committed. Locking the row before reading preserves both increments. The index comparison also shows why I need to check the execution plan as well as the final answer: the same result can require different amounts of database work.
+The most useful lesson was that a database rule only counts if the database enforces it. My first transfer design looked tidy but could not represent a payment to another bank, and the constraint tests exposed that quickly. Normalisation also turned out to be a trade-off, not a goal: the stored balances break strict 3NF, but they make every ledger row self-contained evidence. The concurrency exercise made the lost-update problem concrete. Both sessions read the same balance, one customer's withdrawal silently disappeared, and the fix was a single `FOR UPDATE`. Checking execution plans rather than final answers showed that identical results can need very different amounts of work. One measurement surprised me: I expected the wrong-order index to be clearly slower, but with about 100 rows per account it made no difference. Indexing rules matter at scale, so they have to be tested with realistic data volumes.
 
-## AI-use declaration
+## AI-Use Declaration
 
-I used GitHub Copilot and the portfolio generator to help prepare the database model, scripts and explanations. The generator ran the PostgreSQL and MongoDB exercises, checked their outputs and captured the result images.  I remain responsible for checking and explaining the submitted work.
+I used AI tools while preparing this portfolio. An earlier draft was produced with GitHub Copilot and a portfolio generator. I then used Claude (Anthropic) to extend the database design, write and correct the SQL and MongoDB scripts, run the PostgreSQL scripts on PostgreSQL 16 to capture the evidence images, render the diagrams, and draft the documentation. I chose the case study, supplied the Nigerian banking context (NIP, PAPSS, BVN, NUBAN, KYC), and directed and reviewed the work. The MongoDB script was syntax-checked, but it was not executed during preparation. I remain responsible for checking and explaining everything submitted.
 
 ## References
 
-- [PostgreSQL: constraints](https://www.postgresql.org/docs/17/ddl-constraints.html)
-- [PostgreSQL: EXPLAIN](https://www.postgresql.org/docs/17/using-explain.html)
-- [PostgreSQL: isolation](https://www.postgresql.org/docs/17/transaction-iso.html)
-- [PostgreSQL: row locks](https://www.postgresql.org/docs/17/explicit-locking.html)
-- [MongoDB: data modelling](https://www.mongodb.com/docs/manual/data-modeling/)
-- [MongoDB: replication](https://www.mongodb.com/docs/manual/replication/)
-- [MongoDB: sharding](https://www.mongodb.com/docs/manual/sharding/)
-- [Mermaid: ER diagrams](https://mermaid.js.org/syntax/entityRelationshipDiagram.html)
-
+- PostgreSQL Global Development Group (2024) *PostgreSQL 16 Documentation*: constraints, EXPLAIN, indexes, transaction isolation, explicit locking, partitioning and replication. https://www.postgresql.org/docs/16/
+- MongoDB Inc. (2024) *MongoDB Manual*: data modelling, schema validation, replication and sharding. https://www.mongodb.com/docs/manual/
+- Citus Data (2024) *Citus Documentation*: distributed tables. https://docs.citusdata.com/
+- Amazon Web Services (2024) *AWS Local Zones: Available Local Zones*. https://docs.aws.amazon.com/local-zones/latest/ug/available-local-zones.html

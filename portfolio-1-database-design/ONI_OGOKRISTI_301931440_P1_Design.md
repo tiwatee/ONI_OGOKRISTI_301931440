@@ -1,82 +1,110 @@
-# EgoTrust Transfer and Account Records — database design
+# EgoTrust — Database Design
 
-My case study records customer, account, transfer.
+Ogokristi Oni · Student ID 301931440 · MIT 8103 Portfolio 1
 
-## Users
+## Case Study: EgoTrust — Digital Banking and Payments Platform
 
-- Retail and SME customers
-- Bank staff and compliance officers
-- System administrators and external payment systems
+**Organisation Type:** Bank / Fintech Platform
 
-## Main operations
+EgoTrust is a digital banking platform providing core banking services: customer account management, fund transfers (intrabank and interbank via NIP/PAPSS), deposits, withdrawals, and real-time transaction logging for retail and SME customers.
 
-- Record account openings
-- Record intrabank, NIP, and PAPSS transfers
-- Review transfer activity and summarize account usage
+### Users of the Database
+- Retail and SME customers (account holders)
+- Bank operations staff (tellers, relationship managers)
+- Compliance and audit officers
+- System administrators
+- External payment switch integrations (NIP, PAPSS)
 
-## Entities
+### Major Data Stored
+- Customer profiles and KYC records
+- Bank accounts (savings, current, domiciliary)
+- Transaction ledger (credits, debits, reversals, fees)
+- Interbank transfer records
+- Staff records and audit trails
+- Branch information
 
-| Entity | Information stored |
-| --- | --- |
-| customer | Stores a synthetic customer reference and basic profile and KYC status for the exercise. |
-| account | Stores one customer's account details and exercise balance. |
-| transfer | Stores a transfer record associated with one account, including its channel, rail, status, and time. |
+### Key Database Operations
+- Account opening, KYC verification, freeze/unfreeze
+- Fund transfers (intrabank and interbank)
+- Transaction reversal and settlement
+- Account statement generation
+- Audit trail querying
 
-## customer
+---
 
-| Field | Type | Key | Required |
-| --- | --- | --- | --- |
-| customer_id | BIGINT | PK | Yes |
-| customer_ref | TEXT | Unique | Yes |
-| full_name | TEXT |  | Yes |
-| kyc_status | TEXT |  | Yes |
-| created_on | DATE |  | Yes |
-- Unique key: (customer_ref).
+## Entity-Relationship Design
 
-## account
+The schema consists of **8 entities**:
 
-| Field | Type | Key | Required |
-| --- | --- | --- | --- |
-| account_id | BIGINT | PK | Yes |
-| customer_id | BIGINT | FK | Yes |
-| account_number | TEXT | Unique | Yes |
-| account_type | TEXT |  | Yes |
-| currency_code | TEXT |  | Yes |
-| balance | NUMERIC(18,2) |  | Yes |
-| opened_on | DATE |  | Yes |
-- customer_id → customer.customer_id
-- Unique key: (account_number).
+1. **CUSTOMERS** — Core customer records with BVN and contact details (KYC status is derived from KYC_DOCUMENTS)
+2. **ACCOUNTS** — Bank accounts (savings, current, domiciliary) linked to customers and branches
+3. **TRANSACTIONS** — Immutable ledger entries recording every credit, debit, reversal, and fee
+4. **TRANSFERS** — Fund movement records linking a source account to an internal destination account or an external beneficiary
+5. **KYC_DOCUMENTS** — Identity verification documents per customer, with the verifying staff member
+6. **BRANCHES** — Bank branch locations
+7. **STAFF** — Bank employees with role-based classification
+8. **AUDIT_LOGS** — Change tracking for compliance (stores old/new values as JSONB)
 
-## transfer
+### Relationships and Cardinality
 
-| Field | Type | Key | Required |
-| --- | --- | --- | --- |
-| transfer_id | BIGINT | PK | Yes |
-| account_id | BIGINT | FK | Yes |
-| reference | TEXT | Unique | Yes |
-| amount | NUMERIC(18,2) |  | Yes |
-| channel | TEXT |  | Yes |
-| rail | TEXT |  | Yes |
-| status | TEXT |  | Yes |
-| occurred_at | TIMESTAMPTZ |  | Yes |
-- account_id → account.account_id
-- Unique key: (reference).
+| # | Relationship | Cardinality | Optionality | Enforced by |
+|---|---|---|---|---|
+| R1 | Customer **owns** Account | 1 : N | An account must have exactly one owner; a customer may have zero or more accounts | `accounts.customer_id` FK, NOT NULL |
+| R2 | Customer **submits** KYC Document | 1 : N | One document per type per customer | `kyc_documents.customer_id` FK + `UNIQUE(customer_id, document_type)` |
+| R3 | Branch **hosts** Account | 1 : N | Every account is domiciled at one branch | `accounts.branch_id` FK, NOT NULL |
+| R4 | Branch **employs** Staff | 1 : N | Every staff member belongs to one branch | `staff.branch_id` FK, NOT NULL |
+| R5 | Staff **verifies** KYC Document | 1 : N | Optional while pending; required once verified | `kyc_documents.verified_by` FK + CHECK |
+| R6 | Staff **performs** Audit Log action | 1 : N | Optional (NULL = automated system action) | `audit_logs.staff_id` FK, nullable |
+| R7 | Account **records** Transaction | 1 : N | Every ledger entry belongs to one account | `transactions.account_id` FK, NOT NULL |
+| R8 | Account **sends** Transfer (source) | 1 : N | Mandatory | `transfers.source_account_id` FK, NOT NULL |
+| R9 | Account **receives** Transfer (destination) | 1 : N | Intrabank only; NULL for NIP/PAPSS, where beneficiary bank/account columns are used instead | `transfers.destination_account_id` FK + CHECK |
+| R10 | Transfer **has debit leg** Transaction | 1 : 1 | Optional (absent while pending or if it failed) | `transfers.source_transaction_id` FK + UNIQUE |
+| R11 | Transfer **has credit leg** Transaction | 1 : 1 | Intrabank only | `transfers.dest_transaction_id` FK + UNIQUE |
+| R12 | Transaction **reverses** Transaction | 1 : 1 (recursive) | Required for, and only for, `reversal` entries | `transactions.reverses_transaction_id` self-FK + CHECK |
+| R13 | Audit Log **refers to** any entity | N : 1 (polymorphic) | Mandatory | `entity_type` + `entity_id`, checked by the application (a single FK cannot point at several tables) |
 
-## Relationships and business rules
+R9, R10 and R11 are the subtle ones. An interbank transfer only has an EgoTrust account on the sending side, so the destination FK must be optional, and the beneficiary's bank code and account number are stored on the transfer instead. A CHECK constraint enforces the rule for each transfer type.
 
-- Each synthetic customer reference identifies at most one customer.
-- Every account must reference an existing customer through customer_id.
-- Each modeled account number identifies at most one account.
-- An account balance must be at least zero under the no-overdraft exercise assumption.
-- Every transfer record must reference an existing account through account_id.
-- A transfer reference can be recorded only once, supporting duplicate-submission protection.
-- A recorded transfer amount must be greater than zero.
+---
+
+## Design Decisions
+
+1. **UUID primary keys** — Preferred over auto-increment integers for distributed system compatibility (relevant for Portfolio 5's distributed database discussion) and to prevent enumeration attacks on account endpoints.
+
+2. **CHECK constraints for status fields** — Enforced at the database level rather than application-only validation, ensuring data integrity even when accessed through different services (mobile API, web, branch systems).
+
+3. **Separate transfers table** — Rather than inferring transfers from paired transactions, a dedicated `transfers` table captures the full lifecycle of a fund movement (pending → processing → successful/failed/reversed) along with metadata like fees, payment references, and failure reasons.
+
+4. **JSONB for audit logs** — Using `old_values` and `new_values` as JSONB columns provides flexibility to audit any entity type without creating separate audit tables per entity.
+
+5. **Business rules as CHECK constraints** — Beyond status lists, the schema enforces cross-column rules: verified KYC documents must name a verifier, failed transfers must give a reason, domiciliary accounts must hold foreign currency, and an account cannot transfer to itself.
+
+6. **No duplicate indexes** — PostgreSQL already indexes every PRIMARY KEY and UNIQUE column, so only foreign keys and filter columns get explicit indexes.
+
+7. **Intentional denormalisation in transactions** — `balance_before` and `balance_after` are stored with each transaction for auditability and performance (documented in [the normalisation analysis](ONI_OGOKRISTI_301931440_P1_Normalisation.md)).
+
+---
+
+---
+
+## Tables at a Glance
+
+| Table | Primary key | Foreign keys | Other keys / rules |
+|---|---|---|---|
+| `branches` | `branch_id` | — | `branch_code` unique; status list |
+| `staff` | `staff_id` | `branch_id` | `email` unique; role list |
+| `customers` | `customer_id` | — | `email`, `phone_number`, `bvn` unique; BVN must be 11 digits |
+| `kyc_documents` | `kyc_id` | `customer_id`, `verified_by` | `(customer_id, document_type)` unique; verified ⇒ verifier and date required |
+| `accounts` | `account_id` | `customer_id`, `branch_id` | `account_number` unique, 10 digits (NUBAN); `balance >= 0`; domiciliary ⇔ foreign currency |
+| `transactions` | `transaction_id` | `account_id`, `reverses_transaction_id` (self) | `reference` unique; `amount > 0`; reversal ⇔ reverses another entry |
+| `transfers` | `transfer_id` | `source_account_id`, `destination_account_id`, `source_transaction_id`, `dest_transaction_id` | `payment_reference` unique; no self-transfer; intrabank ⇒ internal destination, NIP/PAPSS ⇒ beneficiary details; failed ⇒ reason |
+| `audit_logs` | `log_id` | `staff_id` | `entity_type` list; polymorphic `entity_id` (no FK, documented) |
+
+Full column definitions are in [the schema](ONI_OGOKRISTI_301931440_P1_Schema.sql). Every rule above is tested by [the constraint tests](ONI_OGOKRISTI_301931440_P1_ConstraintTests.sql).
 
 ## Assumptions
 
-- Use synthetic customer references, account numbers, and transfer references; do not store real personal or payment data.
-- Each account belongs to exactly one customer, and each transfer record refers to one account. This simplified exercise does not model both sides of a transfer.
-- Accounts do not permit overdrafts in this exercise, so their recorded balances must be nonnegative.
-- Transfer amounts are positive, and each transfer reference is unique across the modeled records.
-- Normalization example: Account has a customer_id foreign key. Keep customer_ref, full_name, and kyc_status in Customer and account-specific facts in Account, avoiding repeated customer details across accounts. With atomic fields and single-column keys, this illustrates separating customer attributes that depend on customer_id from account attributes; the example uses no repeated ancestor roles.
-
+- All names, BVNs, phone numbers and account numbers are fictional.
+- Balances are held in the account's own currency; there is no currency conversion in this exercise.
+- Accounts cannot be overdrawn.
+- For interbank transfers (NIP, PAPSS) only the EgoTrust side of the movement is in our ledger; the receiving bank keeps its own records.

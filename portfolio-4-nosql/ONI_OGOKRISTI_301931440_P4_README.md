@@ -1,211 +1,119 @@
 # Portfolio 4 — NoSQL and Advanced Data Models
 
-I used MongoDB collection transfer_events for transfer_created and transfer_settled events. These are fictional event examples based on transfer, account, customer.
+## EgoTrust — Digital Banking & Payments Platform
 
-## Document model
+**Student:** Ogokristi Oni · Student ID 301931440  
+**Module:** MIT 8103 — Advanced Database Systems  
+**Institution:** Miva Open University  
 
-| Field | Meaning |
-| --- | --- |
-| _id | Unique string event ID |
-| eventType | One of the two selected case event labels |
-| occurredAt | Native BSON Date; sample timestamps are in 2030 |
-| source | Original entity, primary key and saved JSON snapshot |
-| embedded | Linked record snapshots read with the event |
-| references | Keys for linked sources kept outside the embedded snapshots |
-| details | Event metadata whose fields vary |
+---
 
-Related account, customer details are stored as snapshots with the event. This makes an event readable in one document. It duplicates some information, and later SQL changes do not automatically update the snapshots. PostgreSQL continues to enforce the relational rules.
+## Overview
 
-## Example document
+This portfolio explores NoSQL data modelling using MongoDB alongside the existing PostgreSQL relational database. In a real-world fintech platform like EgoTrust, a polyglot persistence strategy uses the right database engine for each workload — PostgreSQL for transactional integrity, MongoDB for flexible document storage and high-throughput reads.
 
-```javascript
-{
-    "_id": "event_000001",
-    "schemaVersion": 1,
-    "simulation": true,
-    "eventType": "transfer_created",
-    "occurredAt": ISODate("2030-01-01T10:00:00Z"),
-    "source": {
-        "entity": "transfer",
-        "key": {
-            "transfer_id": 301
-        },
-        "snapshot": {
-            "transfer_id": 301,
-            "account_id": 201,
-            "reference": "TRF-001",
-            "amount": 2500,
-            "channel": "mobile",
-            "rail": "NIP",
-            "status": "failed",
-            "occurred_at": "2026-02-01T10:30:00+01:00"
-        }
-    },
-    "embedded": {
-        "account": [
-            {
-                "key": {
-                    "account_id": 201
-                },
-                "snapshot": {
-                    "account_id": 201,
-                    "customer_id": 101,
-                    "account_number": "1000000001",
-                    "account_type": "savings",
-                    "currency_code": "NGN",
-                    "balance": 12500.5,
-                    "opened_on": "2026-01-16"
-                },
-                "via": [
-                    "transfer.account_id → account"
-                ]
-            }
-        ],
-        "customer": [
-            {
-                "key": {
-                    "customer_id": 101
-                },
-                "snapshot": {
-                    "customer_id": 101,
-                    "customer_ref": "CUS-001",
-                    "full_name": "Amina Example",
-                    "kyc_status": "verified",
-                    "created_on": "2026-01-15"
-                },
-                "via": [
-                    "transfer.account_id → account.customer_id → customer"
-                ]
-            }
-        ]
-    },
-    "references": {},
-    "details": {
-        "channel": "web"
-    }
+## File
+
+| File | Description |
+|------|-------------|
+| `ONI_OGOKRISTI_301931440_P4_MongoDB.js` | mongosh script: document models, sample data, queries, indexes, and schema validation |
+
+The MongoDB data **mirrors the PostgreSQL seed data**: the same three customers (Tunde Adeyemi, Ngozi Eze, Fashola Enterprises), the same account numbers and balances, and the PostgreSQL UUIDs reused as `_id` values. PostgreSQL remains the system of record, and MongoDB holds read-optimised copies that are kept in sync by events, so the IDs must match for the two stores to be reconciled.
+
+## Data Models Implemented
+
+### 1. Document Model — Customer Profiles (Embedded Pattern)
+
+The customer document embeds KYC documents, account references, and user preferences into a single document. This eliminates the need for JOINs when loading a customer profile — a single read retrieves everything the mobile app or web dashboard needs.
+
+```
+Customer {
+  _id, firstName, lastName, email, phone, bvn,
+  address: { street, city, state, country },
+  kyc: {
+    status, tier,
+    documents: [ { type, number, verifiedAt, verifiedBy } ]
+  },
+  accounts: [ { accountId, accountNumber, type, currency, balance (Decimal128), status } ],
+  business: { rcNumber, directors[], industry },   // SME customers only
+  preferences: { notifications, defaultAccount, language }
 }
 ```
 
-## Queries and results
+**Why embedding works here:** KYC documents and account summaries are always read with the customer, are bounded in size (a customer has only a few of each), and are rarely queried on their own. This fits MongoDB's embedding guidelines. Transactions are **not** embedded because they grow without limit and would eventually hit the 16 MB document cap.
 
-| Query | Returned documents |
-| --- | --- |
-| Find the first sample event type (up to five documents). | 1 |
-| Find events for the first source record using nested key fields (up to five). | 2 |
-| Find events in the sample time range using a MongoDB Date filter (up to five). | 2 |
-| Count documents for each event type. | 2 |
+**Flexible schema:** the SME customer carries a `business` sub-document (RC number, directors) that retail customers lack. A relational design would need either NULL-heavy columns or a separate table for this.
 
-## 1. Find the first sample event type (up to five documents).
+### 2. Bucket Pattern — Transaction History (`transaction_buckets`)
 
-```javascript
-db.getCollection("transfer_events").find({"eventType":"transfer_created"}).sort({_id:1}).limit(5).toArray();
+Transactions are grouped by account and day into "bucket" documents, with `_id` set to `<accountId>_<date>`. Instead of one document per transaction, each bucket holds a day's transactions and a pre-computed daily summary (opening balance, credits, debits, closing balance). New transactions are appended with a single atomic upsert (`$push` + `$inc`), which relies on MongoDB's guarantee that all changes to one document are atomic.
+
+**Benefits:**
+- Reduces document count by 10-100× compared to one-per-transaction
+- Daily summary fields enable fast reporting without aggregation
+- Date-range queries scan fewer documents
+- Aligns with how statements are typically viewed (per-day)
+
+### 3. Key-Value Pattern — Session Management
+
+Sessions are looked up by a single key (the session ID) and carry a TTL (time-to-live) index that removes them automatically once `expiresAt` passes. The sample sessions expire 12 hours after the script runs, so they still exist when the queries execute. Redis is the more common choice for this in production; a MongoDB TTL collection serves the same purpose with richer querying (see the `$lookup` in C6).
+
+## SQL vs MongoDB Comparison
+
+| Operation | PostgreSQL (Portfolio 1-3) | MongoDB (Portfolio 4) |
+|-----------|---------------------------|----------------------|
+| Customer profile load | 3 JOINs (customers + kyc_documents + accounts) | Single document read |
+| Transaction history | Index scan + WHERE filter | Bucket document lookup by date |
+| Session lookup | Not modelled (typically Redis) | Key-value with TTL auto-expiry |
+| KYC status check | JOIN + HAVING | Dot-notation query on embedded field |
+| Data integrity | ACID transactions, FK constraints | Schema validation, application-level |
+| Aggregation | GROUP BY, window functions | Aggregation pipeline ($match, $group, $unwind) |
+
+## When to Use Each Engine
+
+| Workload | Recommended Engine | Reason |
+|----------|-------------------|--------|
+| Fund transfers | PostgreSQL | ACID transactions, referential integrity |
+| Account balances | PostgreSQL | Strong consistency, CHECK constraints |
+| Customer profiles (read-heavy) | MongoDB | Embedded documents, fast single reads |
+| Transaction analytics | MongoDB | Aggregation pipeline, bucket pattern |
+| Session management | MongoDB | TTL indexes, key-value access pattern |
+| Audit logs | PostgreSQL (JSONB) | Must be written in the same ACID transaction as the change it records |
+| Real-time notifications | MongoDB | Flexible schema, capped collections |
+
+## MongoDB Features Demonstrated
+
+1. **Embedded documents**: nested objects and arrays within a single document
+2. **Bucket pattern**: per-account, per-day buckets with atomic upsert appends
+3. **Key-value pattern with TTL indexes**: automatic session expiry
+4. **Aggregation pipeline**: `$unwind` → `$match` → `$group` → `$sort`, plus a `$lookup` join
+5. **Schema validation**: `$jsonSchema` mirroring the PostgreSQL CHECK constraints, with one valid insert accepted and one invalid insert rejected
+6. **Dot-notation and positional queries**: `kyc.status`, `accounts.accountNumber`, and `kyc.documents.$`
+7. **Compound, multikey, unique and text indexes**, with `explain()` output showing an IXSCAN
+8. **Decimal128 for money**: `NumberDecimal("249950.00")`. Doubles cannot represent amounts like 0.10 exactly, so they are never used for balances
+
+## How to Run
+
+```bash
+# MongoDB 6.0+ with mongosh. The script drops and recreates egotrust_nosql,
+# so it can be re-run safely.
+mongosh egotrust_nosql ONI_OGOKRISTI_301931440_P4_MongoDB.js
 ```
 
-Selected fields from the returned documents:
+The script prints each query result and ends with a summary line (`3 customers, 4 transaction buckets, 2 sessions, 1 transfers`) and the message "Validation rejected the document as expected".
 
-```json
-[
-  {
-    "_id": "event_000001",
-    "eventType": "transfer_created",
-    "occurredAt": {
-      "$date": "2030-01-01T10:00:00Z"
-    },
-    "source": {
-      "transfer_id": 301
-    }
-  }
-]
-```
+**Evidence:** run the script and save a screenshot of its output as `screenshots/ONI_OGOKRISTI_301931440_P4_MongoDBOutput.png`. A free MongoDB Atlas M0 cluster also works if you don't want to install MongoDB locally: `mongosh "<atlas-connection-string>/egotrust_nosql" ONI_OGOKRISTI_301931440_P4_MongoDB.js`.
 
-## 2. Find events for the first source record using nested key fields (up to five).
+## Design Decisions
 
-```javascript
-db.getCollection("transfer_events").find({"source.key.transfer_id":301}).sort({_id:1}).limit(5).toArray();
-```
-
-Selected fields from the returned documents:
-
-```json
-[
-  {
-    "_id": "event_000001",
-    "eventType": "transfer_created",
-    "occurredAt": {
-      "$date": "2030-01-01T10:00:00Z"
-    },
-    "source": {
-      "transfer_id": 301
-    }
-  },
-  {
-    "_id": "event_000002",
-    "eventType": "transfer_settled",
-    "occurredAt": {
-      "$date": "2030-01-01T10:01:00Z"
-    },
-    "source": {
-      "transfer_id": 301
-    }
-  }
-]
-```
-
-## 3. Find events in the sample time range using a MongoDB Date filter (up to five).
-
-```javascript
-db.getCollection("transfer_events").find({"occurredAt":{"$gte":ISODate("2030-01-01T10:00:00Z"), "$lt":ISODate("2030-01-01T11:00:00Z")}}).sort({_id:1}).limit(5).toArray();
-```
-
-Selected fields from the returned documents:
-
-```json
-[
-  {
-    "_id": "event_000001",
-    "eventType": "transfer_created",
-    "occurredAt": {
-      "$date": "2030-01-01T10:00:00Z"
-    },
-    "source": {
-      "transfer_id": 301
-    }
-  },
-  {
-    "_id": "event_000002",
-    "eventType": "transfer_settled",
-    "occurredAt": {
-      "$date": "2030-01-01T10:01:00Z"
-    },
-    "source": {
-      "transfer_id": 301
-    }
-  }
-]
-```
-
-## 4. Count documents for each event type.
-
-```javascript
-db.getCollection("transfer_events").aggregate([{"$group":{"_id":"$eventType", "documentCount":{"$sum":1}}}, {"$sort":{"_id":1}}]).toArray();
-```
-
-| _id | documentCount |
-| --- | --- |
-| transfer_created | 1 |
-| transfer_settled | 1 |
-
-## Validation and suitability
-
-MongoDB inserted 2 documents. An invalid date type was rejected with code 121 and a repeated event ID with 11000. The collection still contained 2 valid documents. The compound eventType/occurredAt index supports those access fields; this exercise does not measure its speed.
-
-The details field can vary across event types, while the common fields have a validator. Events can be added as separate documents rather than growing one large history record.
-
-## Run the script
-
-Connect mongosh to a fresh exercise database and run ONI_OGOKRISTI_301931440_P4_MongoDB.js. It selects portfolio_nosql, creates the collection, inserts the sample documents and displays the query results. [Implementation evidence](screenshots/ONI_OGOKRISTI_301931440_P4_DocumentsAndQueries.png).
+- **Polyglot persistence** — PostgreSQL remains the system of record for financial data (balances, transfers) where ACID compliance is non-negotiable. MongoDB handles read-heavy, schema-flexible workloads
+- **Embedded vs referenced** — KYC documents are embedded (bounded, always co-accessed); transaction logs use the bucket pattern (unbounded data, time-series access)
+- **Schema validation**: the `transfers` collection shows that MongoDB can enforce structure where integrity matters. MongoDB is schema-*flexible*, not schema-*less*.
+- **Consistency between stores**: MongoDB copies are eventually consistent with PostgreSQL. A balance shown in the app may briefly lag a posting, so any decision that moves money re-reads the balance from PostgreSQL (see Portfolio 5, CAP analysis).
 
 ## References
 
-- [MongoDB — data modelling](https://www.mongodb.com/docs/manual/data-modeling/)
-
+- [MongoDB — Data Modeling](https://www.mongodb.com/docs/manual/data-modeling/)
+- [MongoDB — Schema Validation](https://www.mongodb.com/docs/manual/core/schema-validation/)
+- [MongoDB — TTL Indexes](https://www.mongodb.com/docs/manual/core/index-ttl/)
+- [MongoDB — Model Monetary Data (Decimal128)](https://www.mongodb.com/docs/manual/tutorial/model-monetary-data/)
