@@ -7,13 +7,12 @@ Ogokristi Oni · Student ID 301931440 · Miva Open University
 
 ## Case Study
 
-EgoTrust is a fictional Nigerian digital bank serving retail and SME customers through mobile, web, USSD, POS, ATM and branch channels. It onboards customers with KYC verification, runs savings, current and domiciliary accounts, and moves money between its own accounts, to other Nigerian banks through **NIP** and across Africa through **PAPSS**.
+My case study revolved around a bank I named EgoTrust. It is assumed to be a Nigerian digital bank that caters to retail and SME customers via mobile, web, USSD, POS, ATM and branch channels. Customers require KYC verifications to be onboarded based on CBN compliance rules, and the customers can run savings, current and domiciliary accounts. They are permitted to move money between their accounts, to other banks over NIBSS Instant Payment (NIP), and across Africa through PAPSS.  
+**Users:** customers, bank staff (tellers, relationship and branch managers), compliance officers, administrators and the external payment switches.
 
-- **Users:** customers, bank staff (tellers, relationship and branch managers), compliance officers, system administrators, and the external payment switches (NIP, PAPSS).
-- **Major data:** customer profiles and BVNs, KYC documents, accounts and balances, an immutable transaction ledger, transfer records, branches and staff, and audit logs.
-- **Key operations:** open accounts and verify KYC, transfer funds (intrabank, NIP, PAPSS), reverse failed transactions, produce statements and compliance reports, and reconcile balances at the end of each day.
+**Major data:** customer profiles and BVNs, KYC documents, accounts and balances, an immutable transaction ledger, transfer records, branches and staff, and audit logs.
 
-All names, BVNs and account numbers in this repository are invented.
+**Key operations:** open accounts and verify KYC, transfer funds within EgoTrust and through NIP/PAPSS, reverse failed transactions, produce statements and compliance reports, and reconcile balances at the end of each day. I chose this case because I work on payment systems: a bank needs every topic in this module, from strict integrity and safe concurrency to fast reporting, flexible profile data and resilient distribution.
 
 ## Portfolios
 
