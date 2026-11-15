@@ -7,7 +7,13 @@ Ogokristi Oni · Student ID 301931440 · Miva Open University
 
 ## Case Study
 
-EgoTrust is a fictional Nigerian digital bank serving retail and SME customers through mobile, web, USSD, POS, ATM and branch channels. It onboards customers with KYC verification, runs savings, current and domiciliary accounts, and moves money between its own accounts, to other Nigerian banks through **NIP** and across Africa through **PAPSS**. Its users are customers, bank staff, compliance officers, system administrators and the external payment switches. All names, BVNs and account numbers in this repository are invented.
+EgoTrust is a fictional Nigerian digital bank serving retail and SME customers through mobile, web, USSD, POS, ATM and branch channels. It onboards customers with KYC verification, runs savings, current and domiciliary accounts, and moves money between its own accounts, to other Nigerian banks through **NIP** and across Africa through **PAPSS**.
+
+- **Users:** customers, bank staff (tellers, relationship and branch managers), compliance officers, system administrators, and the external payment switches (NIP, PAPSS).
+- **Major data:** customer profiles and BVNs, KYC documents, accounts and balances, an immutable transaction ledger, transfer records, branches and staff, and audit logs.
+- **Key operations:** open accounts and verify KYC, transfer funds (intrabank, NIP, PAPSS), reverse failed transactions, produce statements and compliance reports, and reconcile balances at the end of each day.
+
+All names, BVNs and account numbers in this repository are invented.
 
 ## Portfolios
 

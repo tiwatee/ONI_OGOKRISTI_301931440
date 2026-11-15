@@ -6,7 +6,7 @@
 
 ## Case Study
 
-EgoTrust is a fictional Nigerian digital bank serving retail and SME customers through mobile, web, USSD, POS, ATM and branch channels. It onboards customers with KYC verification and runs savings, current and domiciliary accounts. It moves money between its own accounts, to other Nigerian banks through NIP, and across Africa through PAPSS. Its users are customers, bank staff, compliance officers, administrators and the external payment switches. I chose this case because I work on payment systems: a bank needs every topic in this module, from strict integrity and safe concurrency to fast reporting, flexible profile data and resilient distribution.
+EgoTrust is a fictional Nigerian digital bank serving retail and SME customers through mobile, web, USSD, POS, ATM and branch channels. It onboards customers with KYC verification and runs savings, current and domiciliary accounts. It moves money between its own accounts, to other Nigerian banks through NIP, and across Africa through PAPSS. **Users:** customers, bank staff (tellers, relationship and branch managers), compliance officers, administrators and the external payment switches. **Major data:** customer profiles and BVNs, KYC documents, accounts and balances, an immutable transaction ledger, transfer records, branches and staff, and audit logs. **Key operations:** open accounts and verify KYC, transfer funds within EgoTrust and through NIP/PAPSS, reverse failed transactions, produce statements and compliance reports, and reconcile balances at the end of each day. I chose this case because I work on payment systems: a bank needs every topic in this module, from strict integrity and safe concurrency to fast reporting, flexible profile data and resilient distribution.
 
 ## Portfolio 1: Database Design and Modelling
 
@@ -33,13 +33,17 @@ I modelled EgoTrust's read-heavy data in MongoDB using three patterns, mirroring
 
 I proposed (but did not deploy) a distributed design. Replication uses a synchronous standby for failover and asynchronous replicas for reporting. Sharding uses Citus, hashing on `account_id`, with a saga for cross-shard transfers. I listed the foreign keys sharding would force into application logic. In CAP terms, the ledger is **CP**: during a network partition it refuses transfers rather than risk a double debit. Sessions and profiles are **AP**. AWS's only Nigerian presence, the Lagos Local Zone, has no managed RDS. I therefore recommended a hybrid: the ledger self-managed in Lagos to meet data-residency requirements, and managed services in the Cape Town region where rules allow. On a single server I verified the replication checks and partition pruning.
 
+![Two-session concurrency output](portfolio-3-transactions-concurrency/screenshots/ONI_OGOKRISTI_301931440_P3_ConcurrencyResult.png)
+
+<p class="caption">Figure 2. Evidence from Portfolio 3: two psql sessions run concurrently. A lost update (1,480,000), a correct result with <code>FOR UPDATE</code> (1,470,000), a REPEATABLE READ serialization failure and a detected deadlock. Further evidence for every portfolio is in each folder's <code>screenshots/</code> on GitHub.</p>
+
 ## Individual Reflection
 
 The most useful lesson was that a database rule only counts if the database enforces it. My first transfer design looked tidy but could not represent a payment to another bank, and the constraint tests exposed that quickly. Normalisation also turned out to be a trade-off, not a goal: the stored balances break strict 3NF, but they make every ledger row self-contained evidence. The concurrency exercise made the lost-update problem concrete. Both sessions read the same balance, one customer's withdrawal silently disappeared, and the fix was a single `FOR UPDATE`. Checking execution plans rather than final answers showed that identical results can need very different amounts of work. One measurement surprised me: I expected the wrong-order index to be clearly slower, but with about 100 rows per account it made no difference. Indexing rules matter at scale, so they have to be tested with realistic data volumes.
 
 ## AI-Use Declaration
 
-I used AI tools while preparing this portfolio. An earlier draft was produced with GitHub Copilot and a portfolio generator. I then used Claude (Anthropic) to extend the database design, write and correct the SQL and MongoDB scripts, run the PostgreSQL scripts on PostgreSQL 16 to capture the evidence images, render the diagrams, and draft the documentation. I chose the case study, supplied the Nigerian banking context (NIP, PAPSS, BVN, NUBAN, KYC), and directed and reviewed the work. I ran the MongoDB script myself on MongoDB 7.0, and its output is included unedited. I remain responsible for checking and explaining everything submitted.
+I used AI tools while preparing this portfolio. An earlier draft was produced with GitHub Copilot and a portfolio generator. I then used Claude (Anthropic) to extend the database design, write and correct the SQL and MongoDB scripts, run the PostgreSQL scripts on PostgreSQL 16 to capture the evidence images, render the diagrams, and draft the documentation. I chose the case study, supplied the Nigerian banking context (NIP, PAPSS, BVN, NUBAN, KYC), and directed and reviewed the work. **Verification:** the PostgreSQL scripts were run from an empty database in the documented order, and the results were checked against the expected outcomes: 18 of 18 constraint violations rejected, the correct concurrent balances (1,480,000 without locking, 1,470,000 with locking) and zero ledger mismatches in a reconciliation query. Errors found during review were corrected and re-tested, including relationship cardinality, seed-data balances, index column order and AWS region facts. I ran the MongoDB script myself on MongoDB 7.0, checked its output against the expected results, and included it unedited. I remain responsible for checking and explaining everything submitted.
 
 ## References
 
@@ -47,3 +51,5 @@ I used AI tools while preparing this portfolio. An earlier draft was produced wi
 - MongoDB Inc. (2024) *MongoDB Manual*: data modelling, schema validation, replication and sharding. https://www.mongodb.com/docs/manual/
 - Citus Data (2024) *Citus Documentation*: distributed tables. https://docs.citusdata.com/
 - Amazon Web Services (2024) *AWS Local Zones: Available Local Zones*. https://docs.aws.amazon.com/local-zones/latest/ug/available-local-zones.html
+- Mermaid (2024) *Entity Relationship Diagrams* and *mermaid-cli*, used to draw Figure 1 and the Portfolio 5 architecture. https://mermaid.js.org/
+- All people, BVNs, account numbers and transactions are fictional data created for this portfolio. No external datasets were used.
