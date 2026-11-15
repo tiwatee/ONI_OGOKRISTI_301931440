@@ -60,7 +60,7 @@ VACUUM ANALYZE txn_benchmark;
 -- ============================================================
 -- STEP 3: Query 2 (account statement) — BEFORE indexing
 -- ============================================================
--- Observed: Parallel Seq Scan, ~166,000 rows removed by filter per worker (33.1 ms).
+-- Observed: Parallel Seq Scan, ~166,000 rows removed by filter per worker (22.9 ms in the recorded run).
 EXPLAIN (ANALYZE, BUFFERS)
 SELECT transaction_id, transaction_type, amount, balance_after,
        channel, reference, status, created_at
@@ -82,9 +82,9 @@ CREATE INDEX idx_bench_account_status_date
 ANALYZE txn_benchmark;
 
 -- Observed (PostgreSQL 16): Bitmap Index Scan on idx_bench_account_status_date
--- with all four predicates as Index Cond; ~22 rows read instead of 500,000.
--- In the recorded run execution time fell from 33.1 ms to 0.22 ms
--- (exact figures vary by machine and run).
+-- with all four predicates as Index Cond; ~28 rows read instead of 500,000.
+-- In the recorded run (PostgreSQL 14.19) execution time fell from
+-- 22.9 ms to 0.075 ms (exact figures vary by machine and run).
 EXPLAIN (ANALYZE, BUFFERS)
 SELECT transaction_id, transaction_type, amount, balance_after,
        channel, reference, status, created_at

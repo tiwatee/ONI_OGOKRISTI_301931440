@@ -65,25 +65,27 @@ PostgreSQL automatically creates a unique B-tree index for every PRIMARY KEY and
 ### Benchmark Method
 The seed data has only a few rows per table, and on tables that small PostgreSQL correctly prefers a sequential scan. `ONI_OGOKRISTI_301931440_P2_Optimisation.sql` therefore builds a separate 500,000-row `txn_benchmark` table (5,000 accounts, about 100 rows each, Sep–Dec 2026), measures each query before and after indexing, and only then applies the chosen indexes to the real tables.
 
-### Measured Results (PostgreSQL 16.15, the run shown in the evidence image)
+### Measured Results (PostgreSQL 14.19, run on my Mac — see the evidence image and raw output)
 
 | Test | Plan | Execution time |
 |------|------|----------------|
-| Query 2 (account statement), no index | Parallel Seq Scan over 500,000 rows | 33.1 ms |
-| Query 2 with `(account_id, status, created_at)` | Bitmap Index Scan, 22 rows read | 0.22 ms |
-| Query 2 with the wrong column order `(account_id, created_at, status)` | Bitmap Index Scan | 0.11 ms |
-| Statement totals with `INCLUDE (transaction_type, amount)` | **Index Only Scan**, Heap Fetches: 0 | 0.12 ms |
-| Failed-transactions list, partial index | Index Scan on the partial index | 0.15 ms |
-| Query 2 on the real 6-row table, after indexing | Seq Scan (correctly chosen by the planner) | 0.04 ms |
+| Query 2 (account statement), no index | Parallel Seq Scan over 500,000 rows | 22.9 ms |
+| Query 2 with `(account_id, status, created_at)` | Bitmap Index Scan, 28 rows read | 0.075 ms |
+| Query 2 with the wrong column order `(account_id, created_at, status)` | Bitmap Index Scan | 0.092 ms |
+| Statement totals with `INCLUDE (transaction_type, amount)` | **Index Only Scan**, Heap Fetches: 0 | 0.28 ms |
+| Failed-transactions list, partial index | Index Scan on the partial index | 0.075 ms |
+| Query 2 on the real 6-row table, after indexing | Seq Scan (correctly chosen by the planner) | 0.012 ms |
 
 | Index size comparison | Size |
 |---|---|
 | Partial `(created_at) WHERE status = 'failed'` | 456 kB |
 | Full `(status, created_at)` | 19 MB |
 
-The composite index cut Query 2 from 33.1 ms to 0.22 ms, about **150 times faster**. Across repeated runs the unindexed time varied between about 33 and 42 ms. The partial index is about **40 times smaller** than the equivalent full index.
+The composite index cut Query 2 from 22.9 ms to 0.075 ms, about **300 times faster**. (Earlier test runs on PostgreSQL 16 showed the same pattern: 33–42 ms down to 0.1–0.2 ms.) The partial index is about **40 times smaller** than the equivalent full index.
 
-The wrong-order index was not slower here (0.11 ms against 0.22 ms). Each account has only about 100 rows, so both scans touch a handful of index entries and the gap is just timing noise. The column-order rule matters for busy accounts with thousands of rows per month. There, `(account_id, created_at, status)` must walk every status inside the date range, while `(account_id, status, created_at)` jumps straight to the matching rows.
+The wrong-order index was only marginally slower here: 0.092 ms against 0.075 ms. Each account has only about 100 rows, so both scans touch a handful of index entries. The column-order rule matters for busy accounts with thousands of rows per month. There, `(account_id, created_at, status)` must walk every status inside the date range, while `(account_id, status, created_at)` jumps straight to the matching rows.
+
+Raw output: [query results](ONI_OGOKRISTI_301931440_P2_QueryResults_Output.txt) · [execution plans](ONI_OGOKRISTI_301931440_P2_QueryPlans_Output.txt) · [benchmark](ONI_OGOKRISTI_301931440_P2_Optimisation_Output.txt)
 
 ![Index comparison evidence](screenshots/ONI_OGOKRISTI_301931440_P2_IndexComparison.png)
 
