@@ -43,7 +43,7 @@ The most useful lesson was that a database rule only counts if the database enfo
 
 ## AI-Use Declaration
 
-AI tools were used as supporting tools during the preparation of this portfolio. GitHub Copilot and a portfolio generator were used during the initial drafting stage, while Claude (Anthropic) assisted with refining the database design, developing and debugging SQL and MongoDB scripts, preparing documentation, and generating diagrams.
+AI tools were used as supporting tools during the preparation of this portfolio. GitHub Copilot was used during the initial drafting stage, while Claude (Anthropic) assisted with refining the database design, developing and debugging SQL and MongoDB scripts, preparing documentation, and generating diagrams.
 
 I was responsible for selecting and developing the case study, defining the database requirements, providing the Nigerian banking context (NIP, PAPSS, BVN, NUBAN, and KYC), and directing the implementation. I reviewed and refined the generated materials, executed the MongoDB script on MongoDB 7.0, and verified the resulting output, which is included as evidence. I take responsibility for the accuracy, understanding, and explanation of the submitted work.
 
