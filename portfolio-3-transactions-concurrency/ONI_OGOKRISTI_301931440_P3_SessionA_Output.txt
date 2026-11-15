@@ -1,0 +1,50 @@
+-- step 1 starts at t=01.506 s
+[A1] read balance
+[A1] Session A read 1500000.00
+-- step 1 done at t=01.524 s
+-- step 3 starts at t=04.502 s
+[A3] write 1500000.00 - 10000 and commit
+-- step 3 done at t=04.503 s
+-- step 5 starts at t=07.509 s
+[A5] reset balance to 1500000
+-- step 5 done at t=07.524 s
+-- step 6 starts at t=09.003 s
+[A6] read balance WITH row lock
+[A6] Session A read 1500000.00 (row now locked)
+-- step 6 done at t=09.006 s
+-- step 8 starts at t=12.001 s
+[A8] write 1500000.00 - 10000 and commit (releases lock)
+-- step 8 done at t=12.003 s
+-- step 10 starts at t=15.002 s
+[A10] REPEATABLE READ: first read
+ first_read 
+------------
+ 1470000.00
+(1 row)
+
+-- step 10 done at t=15.004 s
+-- step 12 starts at t=18.001 s
+[A12] REPEATABLE READ: second read (B has committed a change meanwhile)
+ second_read 
+-------------
+  1470000.00
+(1 row)
+
+[A12] try to update the row B changed
+ERROR:  could not serialize access due to concurrent update
+-- step 12 done at t=18.003 s
+-- step 14 starts at t=21.001 s
+[A14] lock account 0012345002
+-- step 14 done at t=21.002 s
+-- step 16 starts at t=24.003 s
+[A16] request account 0023456001 (held by B)
+[A16] Session A transaction finished
+-- step 16 done at t=26.583 s
+-- step 18 starts at t=27.002 s
+[A18] restore balance to 1500000
+ account_number |  balance   
+----------------+------------
+ 0012345002     | 1500000.00
+(1 row)
+
+-- step 18 done at t=27.003 s

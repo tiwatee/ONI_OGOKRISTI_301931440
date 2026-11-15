@@ -18,9 +18,9 @@ This portfolio demonstrates transaction management, isolation levels, and concur
 |------|-------------|
 | [`ONI_OGOKRISTI_301931440_P3_Transactions.sql`](ONI_OGOKRISTI_301931440_P3_Transactions.sql) | Single-session script: COMMIT, ROLLBACK, SAVEPOINT, isolation levels, locking patterns |
 | [`ONI_OGOKRISTI_301931440_P3_SessionA.sql`](ONI_OGOKRISTI_301931440_P3_SessionA.sql) / [`ONI_OGOKRISTI_301931440_P3_SessionB.sql`](ONI_OGOKRISTI_301931440_P3_SessionB.sql) | Two-session scripts with numbered steps: lost update, `FOR UPDATE`, REPEATABLE READ conflict, deadlock |
-| [Commit/rollback evidence](screenshots/ONI_OGOKRISTI_301931440_P3_CommitRollback.png) · [Concurrency evidence](screenshots/ONI_OGOKRISTI_301931440_P3_ConcurrencyResult.png) | Output captured from running the scripts on PostgreSQL 16 |
+| [Commit/rollback evidence](screenshots/ONI_OGOKRISTI_301931440_P3_CommitRollback.png) · [Concurrency evidence](screenshots/ONI_OGOKRISTI_301931440_P3_ConcurrencyResult.png) | Output captured from running the scripts on PostgreSQL 14.19 (my Mac) |
 
-## Two-Session Results (run concurrently)
+## Two-Session Results (run concurrently on PostgreSQL 14.19)
 
 Both sessions work on account 0012345002, which starts at NGN 1,500,000. Session A withdraws 10,000 and Session B withdraws 20,000, so the correct final balance is **1,470,000**. Each session reads the balance into a psql variable (`\gset`), then writes "what I read minus my amount". This is the read-calculate-write pattern an application performs.
 
@@ -31,7 +31,9 @@ Both sessions work on account 0012345002, which starts at NGN 1,500,000. Session
 | 3. REPEATABLE READ | A read the same balance twice, even though B committed a change in between (snapshot). A's update then failed: `could not serialize access due to concurrent update` | unchanged ✓ |
 | 4. Deadlock | A locked 0012345002 then wanted 0023456001; B did the reverse. PostgreSQL reported `deadlock detected` and aborted B, and A then completed | no partial change ✓ |
 
-The last step restores the account to 1,500,000, so the ledger still reconciles.
+The last step restores the account to 1,500,000, so the ledger still reconciles (a final reconciliation query found 0 mismatches).
+
+Raw output: [Session A](ONI_OGOKRISTI_301931440_P3_SessionA_Output.txt) · [Session B](ONI_OGOKRISTI_301931440_P3_SessionB_Output.txt) · [Transactions script](ONI_OGOKRISTI_301931440_P3_Transactions_Output.txt)
 
 ![Concurrency evidence](screenshots/ONI_OGOKRISTI_301931440_P3_ConcurrencyResult.png)
 

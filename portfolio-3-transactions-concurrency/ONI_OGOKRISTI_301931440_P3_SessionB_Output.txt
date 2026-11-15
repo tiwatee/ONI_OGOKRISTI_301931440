@@ -1,0 +1,44 @@
+-- step 2 starts at t=03.003 s
+[B2] read balance
+[B2] Session B read 1500000.00
+-- step 2 done at t=03.022 s
+-- step 4 starts at t=06.001 s
+[B4] write 1500000.00 - 20000 and commit
+[B4] final balance (correct answer would be 1470000.00):
+ final_balance 
+---------------
+    1480000.00
+(1 row)
+
+-- step 4 done at t=06.004 s
+-- step 7 starts at t=10.502 s
+[B7] read balance WITH row lock (waits for A)
+[B7] Session B got the lock and read 1490000.00
+-- step 7 done at t=12.003 s
+-- step 9 starts at t=13.501 s
+[B9] write 1490000.00 - 20000 and commit
+[B9] final balance (correct answer is 1470000.00):
+ final_balance 
+---------------
+    1470000.00
+(1 row)
+
+-- step 9 done at t=13.506 s
+-- step 11 starts at t=16.502 s
+[B11] credit 5000 and commit
+-- step 11 done at t=16.504 s
+-- step 13 starts at t=19.503 s
+[B13] reverse the 5000 credit
+-- step 13 done at t=19.506 s
+-- step 15 starts at t=22.502 s
+[B15] lock account 0023456001
+-- step 15 done at t=22.505 s
+-- step 17 starts at t=25.501 s
+[B17] request account 0012345002 (held by A)
+ERROR:  deadlock detected
+DETAIL:  Process 65769 waits for ShareLock on transaction 942; blocked by process 65770.
+Process 65770 waits for ShareLock on transaction 943; blocked by process 65769.
+HINT:  See server log for query details.
+CONTEXT:  while updating tuple (0,14) in relation "accounts"
+[B17] Session B transaction finished
+-- step 17 done at t=26.577 s
