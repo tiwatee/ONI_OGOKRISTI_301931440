@@ -42,7 +42,7 @@ psql -U postgres -d egotrust -f ONI_OGOKRISTI_301931440_P1_SampleData.sql
 psql -U postgres -d egotrust -f ONI_OGOKRISTI_301931440_P1_ConstraintTests.sql   # expect 18 errors
 ```
 
-Tested on PostgreSQL 16.
+Run on PostgreSQL 14.19 on my Mac (the evidence above, raw output in [`ONI_OGOKRISTI_301931440_P1_Output.txt`](ONI_OGOKRISTI_301931440_P1_Output.txt)); also tested on PostgreSQL 16.
 
 ## References
 

@@ -1,0 +1,120 @@
+ERROR:  23505: duplicate key value violates unique constraint "branches_pkey"
+DETAIL:  Key (branch_id)=(a1b2c3d4-0001-4000-8000-000000000001) already exists.
+SCHEMA NAME:  public
+TABLE NAME:  branches
+CONSTRAINT NAME:  branches_pkey
+LOCATION:  _bt_check_unique, nbtinsert.c:670
+ERROR:  23505: duplicate key value violates unique constraint "customers_bvn_key"
+DETAIL:  Key (bvn)=(22345678901) already exists.
+SCHEMA NAME:  public
+TABLE NAME:  customers
+CONSTRAINT NAME:  customers_bvn_key
+LOCATION:  _bt_check_unique, nbtinsert.c:670
+ERROR:  23505: duplicate key value violates unique constraint "accounts_account_number_key"
+DETAIL:  Key (account_number)=(0012345001) already exists.
+SCHEMA NAME:  public
+TABLE NAME:  accounts
+CONSTRAINT NAME:  accounts_account_number_key
+LOCATION:  _bt_check_unique, nbtinsert.c:670
+ERROR:  23505: duplicate key value violates unique constraint "kyc_documents_customer_id_document_type_key"
+DETAIL:  Key (customer_id, document_type)=(c3d4e5f6-0001-4000-8000-000000000001, national_id) already exists.
+SCHEMA NAME:  public
+TABLE NAME:  kyc_documents
+CONSTRAINT NAME:  kyc_documents_customer_id_document_type_key
+LOCATION:  _bt_check_unique, nbtinsert.c:670
+ERROR:  23505: duplicate key value violates unique constraint "transfers_payment_reference_key"
+DETAIL:  Key (payment_reference)=(TRF-20261101-001) already exists.
+SCHEMA NAME:  public
+TABLE NAME:  transfers
+CONSTRAINT NAME:  transfers_payment_reference_key
+LOCATION:  _bt_check_unique, nbtinsert.c:670
+ERROR:  23503: insert or update on table "accounts" violates foreign key constraint "accounts_customer_id_fkey"
+DETAIL:  Key (customer_id)=(00000000-0000-4000-8000-000000000000) is not present in table "customers".
+SCHEMA NAME:  public
+TABLE NAME:  accounts
+CONSTRAINT NAME:  accounts_customer_id_fkey
+LOCATION:  ri_ReportViolation, ri_triggers.c:2539
+ERROR:  23503: insert or update on table "transactions" violates foreign key constraint "transactions_account_id_fkey"
+DETAIL:  Key (account_id)=(00000000-0000-4000-8000-000000000000) is not present in table "accounts".
+SCHEMA NAME:  public
+TABLE NAME:  transactions
+CONSTRAINT NAME:  transactions_account_id_fkey
+LOCATION:  ri_ReportViolation, ri_triggers.c:2539
+ERROR:  23503: update or delete on table "customers" violates foreign key constraint "kyc_documents_customer_id_fkey" on table "kyc_documents"
+DETAIL:  Key (customer_id)=(c3d4e5f6-0001-4000-8000-000000000002) is still referenced from table "kyc_documents".
+SCHEMA NAME:  public
+TABLE NAME:  kyc_documents
+CONSTRAINT NAME:  kyc_documents_customer_id_fkey
+LOCATION:  ri_ReportViolation, ri_triggers.c:2553
+ERROR:  23514: new row for relation "accounts" violates check constraint "accounts_balance_check"
+DETAIL:  Failing row contains (d4e5f6a7-0001-4000-8000-000000000001, c3d4e5f6-0001-4000-8000-000000000001, 0012345001, savings, NGN, -1.00, active, a1b2c3d4-0001-4000-8000-000000000001, 2026-11-15 19:38:48.581039, 2026-11-15 19:38:48.581039).
+SCHEMA NAME:  public
+TABLE NAME:  accounts
+CONSTRAINT NAME:  accounts_balance_check
+LOCATION:  ExecConstraints, execMain.c:1942
+ERROR:  23514: new row for relation "customers" violates check constraint "customers_bvn_check"
+DETAIL:  Failing row contains (0e4fcc74-e009-433a-81f2-db0242adf952, Test, User, test2@email.com, 08000000002, 12345, 1990-01-01, null, retail, active, 2026-11-15 19:38:48.615229, 2026-11-15 19:38:48.615229).
+SCHEMA NAME:  public
+TABLE NAME:  customers
+CONSTRAINT NAME:  customers_bvn_check
+LOCATION:  ExecConstraints, execMain.c:1942
+ERROR:  23514: new row for relation "kyc_documents" violates check constraint "kyc_documents_verification_status_check"
+DETAIL:  Failing row contains (5753c31a-844a-4d2b-9ffd-ace5b5640272, c3d4e5f6-0001-4000-8000-000000000003, national_id, NIN-9876543210, banana, null, null, 2026-11-15 19:38:48.581039).
+SCHEMA NAME:  public
+TABLE NAME:  kyc_documents
+CONSTRAINT NAME:  kyc_documents_verification_status_check
+LOCATION:  ExecConstraints, execMain.c:1942
+ERROR:  23514: new row for relation "accounts" violates check constraint "accounts_currency_check"
+DETAIL:  Failing row contains (55a8de8c-cb07-4a69-8d10-094f667fc294, c3d4e5f6-0001-4000-8000-000000000002, 0099999902, domiciliary, XYZ, 0.00, active, a1b2c3d4-0001-4000-8000-000000000002, 2026-11-15 19:38:48.615524, 2026-11-15 19:38:48.615524).
+SCHEMA NAME:  public
+TABLE NAME:  accounts
+CONSTRAINT NAME:  accounts_currency_check
+LOCATION:  ExecConstraints, execMain.c:1942
+ERROR:  23514: new row for relation "transfers" violates check constraint "transfers_status_check"
+DETAIL:  Failing row contains (f6a7b8c9-0001-4000-8000-000000000001, d4e5f6a7-0001-4000-8000-000000000002, d4e5f6a7-0001-4000-8000-000000000003, null, null, null, 25000.00, 0.00, NGN, intrabank, TRF-20261101-001, Transfer to Ngozi Eze, maybe, null, null, e5f6a7b8-0001-4000-8000-000000000002, e5f6a7b8-0001-4000-8000-000000000003, 2026-11-01 10:15:00, 2026-11-01 10:15:00).
+SCHEMA NAME:  public
+TABLE NAME:  transfers
+CONSTRAINT NAME:  transfers_status_check
+LOCATION:  ExecConstraints, execMain.c:1942
+ERROR:  23514: new row for relation "transactions" violates check constraint "transactions_amount_check"
+DETAIL:  Failing row contains (afeb6938-6c68-4d83-917f-6be5112dd48e, d4e5f6a7-0001-4000-8000-000000000001, credit, 0.00, 249950.00, 249950.00, api, TXN-TEST-T14, null, successful, null, 2026-11-15 19:38:48.616018).
+SCHEMA NAME:  public
+TABLE NAME:  transactions
+CONSTRAINT NAME:  transactions_amount_check
+LOCATION:  ExecConstraints, execMain.c:1942
+ERROR:  23514: new row for relation "accounts" violates check constraint "accounts_check"
+DETAIL:  Failing row contains (5e7f725e-61f1-41a2-9950-0e4d7efbdbf6, c3d4e5f6-0001-4000-8000-000000000002, 0099999903, domiciliary, NGN, 0.00, active, a1b2c3d4-0001-4000-8000-000000000002, 2026-11-15 19:38:48.616168, 2026-11-15 19:38:48.616168).
+SCHEMA NAME:  public
+TABLE NAME:  accounts
+CONSTRAINT NAME:  accounts_check
+LOCATION:  ExecConstraints, execMain.c:1942
+ERROR:  23514: new row for relation "transfers" violates check constraint "transfers_check1"
+DETAIL:  Failing row contains (f44dc2b2-1962-4a57-93c9-c903c4ce7b9b, d4e5f6a7-0001-4000-8000-000000000001, null, null, null, null, 100.00, 0.00, NGN, nip, TRF-TEST-T16, null, pending, null, null, null, null, 2026-11-15 19:38:48.616314, null).
+SCHEMA NAME:  public
+TABLE NAME:  transfers
+CONSTRAINT NAME:  transfers_check1
+LOCATION:  ExecConstraints, execMain.c:1942
+ERROR:  23514: new row for relation "transfers" violates check constraint "transfers_check"
+DETAIL:  Failing row contains (99a1d2a7-fc10-4476-b525-179171e624d9, d4e5f6a7-0001-4000-8000-000000000001, d4e5f6a7-0001-4000-8000-000000000001, null, null, null, 100.00, 0.00, NGN, intrabank, TRF-TEST-T17, null, pending, null, null, null, null, 2026-11-15 19:38:48.616436, null).
+SCHEMA NAME:  public
+TABLE NAME:  transfers
+CONSTRAINT NAME:  transfers_check
+LOCATION:  ExecConstraints, execMain.c:1942
+ERROR:  23514: new row for relation "kyc_documents" violates check constraint "kyc_documents_check"
+DETAIL:  Failing row contains (5753c31a-844a-4d2b-9ffd-ace5b5640272, c3d4e5f6-0001-4000-8000-000000000003, national_id, NIN-9876543210, verified, null, null, 2026-11-15 19:38:48.581039).
+SCHEMA NAME:  public
+TABLE NAME:  kyc_documents
+CONSTRAINT NAME:  kyc_documents_check
+LOCATION:  ExecConstraints, execMain.c:1942
+  table_name   | row_count 
+---------------+-----------
+ branches      |         3
+ staff         |         3
+ customers     |         3
+ kyc_documents |         4
+ accounts      |         5
+ transactions  |         6
+ transfers     |         4
+ audit_logs    |         2
+(8 rows)
+
