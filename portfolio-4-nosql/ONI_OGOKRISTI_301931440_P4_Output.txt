@@ -1,0 +1,244 @@
+$ mongosh egotrust_nosql ONI_OGOKRISTI_301931440_P4_MongoDB.js
+-- run at: 2026-11-15 19:07:38 WAT   mongosh 2.14.2   server 7.0.48
+
+{
+  _id: 'c3d4e5f6-0001-4000-8000-000000000001',
+  firstName: 'Tunde',
+  lastName: 'Adeyemi',
+  email: 'tunde.adeyemi@email.com',
+  phone: '08012345678',
+  bvn: '22345678901',
+  dateOfBirth: ISODate('1990-05-15T00:00:00.000Z'),
+  customerType: 'retail',
+  address: {
+    street: '45 Lekki Phase 1',
+    city: 'Lagos',
+    state: 'Lagos',
+    country: 'Nigeria'
+  },
+  kyc: {
+    status: 'verified',
+    tier: 3,
+    documents: [
+      {
+        type: 'national_id',
+        number: 'NIN-1234567890',
+        status: 'verified',
+        verifiedAt: ISODate('2026-10-01T10:00:00.000Z'),
+        verifiedBy: 'Kemi Adebayo'
+      },
+      {
+        type: 'utility_bill',
+        number: 'UB-2024-0045',
+        status: 'verified',
+        verifiedAt: ISODate('2026-10-01T10:05:00.000Z'),
+        verifiedBy: 'Kemi Adebayo'
+      }
+    ]
+  },
+  accounts: [
+    {
+      accountId: 'd4e5f6a7-0001-4000-8000-000000000001',
+      accountNumber: '0012345001',
+      type: 'savings',
+      currency: 'NGN',
+      balance: Decimal128('249950.00'),
+      status: 'active'
+    },
+    {
+      accountId: 'd4e5f6a7-0001-4000-8000-000000000002',
+      accountNumber: '0012345002',
+      type: 'current',
+      currency: 'NGN',
+      balance: Decimal128('1500000.00'),
+      status: 'active'
+    },
+    {
+      accountId: 'd4e5f6a7-0001-4000-8000-000000000005',
+      accountNumber: '0012345003',
+      type: 'domiciliary',
+      currency: 'USD',
+      balance: Decimal128('3200.00'),
+      status: 'active'
+    }
+  ],
+  preferences: {
+    notifications: {
+      email: true,
+      sms: true,
+      push: true
+    },
+    defaultAccount: '0012345001',
+    language: 'en',
+    twoFactorEnabled: true
+  },
+  createdAt: ISODate('2026-10-01T09:00:00.000Z'),
+  updatedAt: ISODate('2026-11-01T23:00:00.000Z')
+}
+[
+  {
+    _id: 'c3d4e5f6-0001-4000-8000-000000000003',
+    firstName: 'Fashola',
+    lastName: 'Enterprises',
+    kyc: {
+      status: 'pending',
+      tier: 1
+    }
+  }
+]
+[
+  {
+    _id: 'c3d4e5f6-0001-4000-8000-000000000002',
+    firstName: 'Ngozi',
+    lastName: 'Eze',
+    accounts: [
+      {
+        accountId: 'd4e5f6a7-0001-4000-8000-000000000003',
+        accountNumber: '0023456001',
+        type: 'savings',
+        currency: 'NGN',
+        balance: Decimal128('850000.00'),
+        status: 'active'
+      }
+    ]
+  }
+]
+[
+  {
+    _id: 'd4e5f6a7-0001-4000-8000-000000000001_2026-11-01',
+    accountId: 'd4e5f6a7-0001-4000-8000-000000000001',
+    accountNumber: '0012345001',
+    date: ISODate('2026-11-01T00:00:00.000Z'),
+    transactionCount: 2,
+    transactions: [
+      {
+        reference: 'TXN-20261101-001',
+        type: 'credit',
+        amount: Decimal128('50000.00'),
+        balanceAfter: Decimal128('250000.00'),
+        channel: 'api',
+        narration: 'Salary credit Nov 2026',
+        status: 'successful',
+        timestamp: ISODate('2026-11-01T08:30:00.000Z')
+      },
+      {
+        reference: 'TXN-20261101-006',
+        type: 'fee',
+        amount: Decimal128('50.00'),
+        balanceAfter: Decimal128('249950.00'),
+        channel: 'api',
+        narration: 'SMS notification fee',
+        status: 'successful',
+        timestamp: ISODate('2026-11-01T23:00:00.000Z')
+      }
+    ],
+    dailySummary: {
+      openingBalance: Decimal128('200000.00'),
+      totalCredits: Decimal128('50000.00'),
+      totalDebits: Decimal128('50.00'),
+      closingBalance: Decimal128('249950.00')
+    }
+  },
+  {
+    _id: 'd4e5f6a7-0001-4000-8000-000000000001_2026-11-02',
+    accountId: 'd4e5f6a7-0001-4000-8000-000000000001',
+    accountNumber: '0012345001',
+    dailySummary: {
+      closingBalance: Decimal128('234950.00'),
+      openingBalance: Decimal128('249950.00'),
+      totalDebits: Decimal128('15000.00')
+    },
+    date: ISODate('2026-11-02T00:00:00.000Z'),
+    transactionCount: 1,
+    transactions: [
+      {
+        reference: 'TXN-20261102-101',
+        type: 'debit',
+        amount: Decimal128('15000.00'),
+        balanceAfter: Decimal128('234950.00'),
+        channel: 'pos',
+        narration: 'POS purchase',
+        status: 'successful',
+        timestamp: ISODate('2026-11-02T16:45:00.000Z')
+      }
+    ]
+  }
+]
+[
+  {
+    _id: 'branch',
+    totalOut: Decimal128('100050.00'),
+    count: 2
+  },
+  {
+    _id: 'web',
+    totalOut: Decimal128('25000.00'),
+    count: 1
+  },
+  {
+    _id: 'pos',
+    totalOut: Decimal128('15000.00'),
+    count: 1
+  },
+  {
+    _id: 'api',
+    totalOut: Decimal128('50.00'),
+    count: 1
+  }
+]
+[
+  {
+    _id: 'sess_7f3a9c1e',
+    device: {
+      type: 'mobile'
+    },
+    expiresAt: ISODate('2026-11-16T06:08:16.148Z'),
+    name: 'Tunde Adeyemi'
+  },
+  {
+    _id: 'sess_b81d44a0',
+    device: {
+      type: 'web'
+    },
+    expiresAt: ISODate('2026-11-16T06:08:16.148Z'),
+    name: 'Ngozi Eze'
+  }
+]
+{
+  stage: 'FETCH',
+  inputStage: {
+    stage: 'IXSCAN',
+    keyPattern: {
+      accountId: 1,
+      date: 1
+    },
+    indexName: 'accountId_1_date_1',
+    isMultiKey: false,
+    multiKeyPaths: {
+      accountId: [],
+      date: []
+    },
+    isUnique: false,
+    isSparse: false,
+    isPartial: false,
+    indexVersion: 2,
+    direction: 'forward',
+    indexBounds: {
+      accountId: [
+        '["d4e5f6a7-0001-4000-8000-000000000001", "d4e5f6a7-0001-4000-8000-000000000001"]'
+      ],
+      date: [
+        '[new Date(1793491200000), new Date(1796083200000))'
+      ]
+    }
+  }
+}
+[
+  {
+    _id: 'd4e5f6a7-0001-4000-8000-000000000001_2026-11-01',
+    accountNumber: '0012345001',
+    date: ISODate('2026-11-01T00:00:00.000Z')
+  }
+]
+Validation rejected the document as expected: Document failed validation
+EgoTrust NoSQL model loaded: 3 customers, 4 transaction buckets, 2 sessions, 1 transfers.

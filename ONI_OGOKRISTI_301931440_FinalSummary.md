@@ -27,7 +27,7 @@ A single script demonstrates atomic transfers (COMMIT), a rejected overdraft tha
 
 ## Portfolio 4: NoSQL and Advanced Data Models
 
-I modelled EgoTrust's read-heavy data in MongoDB using three patterns, mirroring the PostgreSQL records and IDs. Customer profiles embed KYC documents and account summaries, so one read replaces three joins; SME customers carry extra business fields without schema changes. Transaction history uses per-account, per-day buckets updated by a single atomic upsert. Sessions use a key-value design with a TTL index that removes them automatically when they expire. Money is stored as Decimal128, and a `$jsonSchema` validator mirrors the SQL CHECK rules. The relational database remains the system of record for balances.
+I modelled EgoTrust's read-heavy data in MongoDB using three patterns, mirroring the PostgreSQL records and IDs. Customer profiles embed KYC documents and account summaries, so one read replaces three joins; SME customers carry extra business fields without schema changes. Transaction history uses per-account, per-day buckets updated by a single atomic upsert. Sessions use a key-value design with a TTL index that removes them automatically when they expire. Money is stored as Decimal128, and a `$jsonSchema` validator mirrors the SQL CHECK rules. Run on MongoDB 7.0, every query returned the expected documents, `explain()` confirmed an index scan, and the validator rejected an invalid transfer. The relational database remains the system of record for balances.
 
 ## Portfolio 5: Distributed and Cloud Database Exercise
 
@@ -39,7 +39,7 @@ The most useful lesson was that a database rule only counts if the database enfo
 
 ## AI-Use Declaration
 
-I used AI tools while preparing this portfolio. An earlier draft was produced with GitHub Copilot and a portfolio generator. I then used Claude (Anthropic) to extend the database design, write and correct the SQL and MongoDB scripts, run the PostgreSQL scripts on PostgreSQL 16 to capture the evidence images, render the diagrams, and draft the documentation. I chose the case study, supplied the Nigerian banking context (NIP, PAPSS, BVN, NUBAN, KYC), and directed and reviewed the work. The MongoDB script was syntax-checked, but it was not executed during preparation. I remain responsible for checking and explaining everything submitted.
+I used AI tools while preparing this portfolio. An earlier draft was produced with GitHub Copilot and a portfolio generator. I then used Claude (Anthropic) to extend the database design, write and correct the SQL and MongoDB scripts, run the PostgreSQL scripts on PostgreSQL 16 to capture the evidence images, render the diagrams, and draft the documentation. I chose the case study, supplied the Nigerian banking context (NIP, PAPSS, BVN, NUBAN, KYC), and directed and reviewed the work. I ran the MongoDB script myself on MongoDB 7.0, and its output is included unedited. I remain responsible for checking and explaining everything submitted.
 
 ## References
 

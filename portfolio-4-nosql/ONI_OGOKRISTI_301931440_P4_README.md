@@ -17,6 +17,7 @@ This portfolio explores NoSQL data modelling using MongoDB alongside the existin
 | File | Description |
 |------|-------------|
 | `ONI_OGOKRISTI_301931440_P4_MongoDB.js` | mongosh script: document models, sample data, queries, indexes, and schema validation |
+| [`ONI_OGOKRISTI_301931440_P4_Output.txt`](ONI_OGOKRISTI_301931440_P4_Output.txt) · [screenshot](screenshots/ONI_OGOKRISTI_301931440_P4_MongoDBOutput.png) | Output from running the script on MongoDB 7.0 |
 
 The MongoDB data **mirrors the PostgreSQL seed data**: the same three customers (Tunde Adeyemi, Ngozi Eze, Fashola Enterprises), the same account numbers and balances, and the PostgreSQL UUIDs reused as `_id` values. PostgreSQL remains the system of record, and MongoDB holds read-optimised copies that are kept in sync by events, so the IDs must match for the two stores to be reconciled.
 
@@ -102,7 +103,23 @@ mongosh egotrust_nosql ONI_OGOKRISTI_301931440_P4_MongoDB.js
 
 The script prints each query result and ends with a summary line (`3 customers, 4 transaction buckets, 2 sessions, 1 transfers`) and the message "Validation rejected the document as expected".
 
-**Evidence:** run the script and save a screenshot of its output as `screenshots/ONI_OGOKRISTI_301931440_P4_MongoDBOutput.png`. A free MongoDB Atlas M0 cluster also works if you don't want to install MongoDB locally: `mongosh "<atlas-connection-string>/egotrust_nosql" ONI_OGOKRISTI_301931440_P4_MongoDB.js`.
+## Results (MongoDB 7.0.48, mongosh 2.14.2)
+
+I ran the script on my own computer. The full, unedited output is in [`ONI_OGOKRISTI_301931440_P4_Output.txt`](ONI_OGOKRISTI_301931440_P4_Output.txt).
+
+| Check | Result |
+|---|---|
+| C1 profile load | Whole customer (KYC documents, 3 accounts, preferences) returned by one `findOne` |
+| C2 pending KYC | Fashola Enterprises |
+| C3 owner of NUBAN 0023456001 | Ngozi Eze, with only the matching account projected |
+| C4 November statement | 2 daily buckets; the 2 Nov bucket was created by the atomic upsert |
+| C5 aggregation | branch 100,050.00 · web 25,000.00 · pos 15,000.00 · api 50.00 (Decimal128 sums) |
+| C6 `$lookup` | 2 active sessions joined to customer names |
+| `explain()` | **IXSCAN** on `accountId_1_date_1` |
+| Validation | Invalid transfer (currency `JPY`, negative amount) rejected: "Document failed validation" |
+| Final state | 3 customers, 4 transaction buckets, 2 sessions, 1 transfer |
+
+![MongoDB output](screenshots/ONI_OGOKRISTI_301931440_P4_MongoDBOutput.png) A free MongoDB Atlas M0 cluster also works if you don't want to install MongoDB locally: `mongosh "<atlas-connection-string>/egotrust_nosql" ONI_OGOKRISTI_301931440_P4_MongoDB.js`.
 
 ## Design Decisions
 
